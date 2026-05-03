@@ -1,6 +1,9 @@
 # Build artifacts and intermediate files
 build/
 
+# VS Code settings
+.vscode/
+
 # Prerequisites
 *.d
 
