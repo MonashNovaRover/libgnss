@@ -1,3 +1,6 @@
+# Build artifacts and intermediate files
+build/
+
 # Prerequisites
 *.d
 
