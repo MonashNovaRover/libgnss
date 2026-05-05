@@ -363,6 +363,7 @@ struct sentence_id_map_entry sentence_id_map[] = {
     { "GST", MINMEA_SENTENCE_GST },
     { "GSV", MINMEA_SENTENCE_GSV },
     { "RMC", MINMEA_SENTENCE_RMC },
+    { "THS", MINMEA_SENTENCE_THS },
     { "VTG", MINMEA_SENTENCE_VTG },
     { "ZDA", MINMEA_SENTENCE_ZDA },
 };
@@ -638,6 +639,20 @@ bool minmea_parse_zda(struct minmea_sentence_zda *frame, const char *sentence)
       return false;
 
   return true;
+}
+
+bool minmea_parse_ths(struct minmea_sentence_ths *frame, const char *sentence)
+{
+    // $GNTHS,341.3344,A*1F
+    if (!minmea_scan(sentence, "tfc",
+            &frame->type,
+            &frame->heading,
+            &frame->mode))
+        return false;
+    if (memcmp(frame->type.sentence_id, "THS", sizeof(frame->type.sentence_id)))
+        return false;
+
+    return true;
 }
 
 int minmea_getdatetime(struct tm *tm, const struct minmea_date *date, const struct minmea_time *time_)
