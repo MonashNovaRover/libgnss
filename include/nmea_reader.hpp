@@ -39,7 +39,8 @@ using NMEASentence = std::variant<
 /**
  * Parses an NMEA sentence and returns a variant containing the appropriate struct.
  * @param sentence NMEA sentence to parse, must be null-terminated
- * @return std::optional containing the parsed NMEASentence if successful, or std::nullopt if parsing failed
+ * @return std::optional containing the parsed NMEASentence if successful, or std::nullopt if
+ * parsing failed
  */
 std::optional<NMEASentence> parseNMEA(const char* sentence);
 

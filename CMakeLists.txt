@@ -10,4 +10,6 @@ add_executable(libgnss
         include/nmea_reader.hpp
         include/ringbuffer.hpp
         src/minmea.c
-        src/nmea_reader.cpp)
+        src/nmea_reader.cpp
+        include/rtcm_handler.hpp
+        src/rtcm_handler.cpp)
