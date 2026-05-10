@@ -6,6 +6,8 @@
 #define LIBGNSS_SERIAL_HPP
 
 #include <cstdint>
+#include <condition_variable>
+#include <mutex>
 #include <string>
 #include <libserialport.h>
 #include <stdexcept>
@@ -28,7 +30,7 @@ public:
 
   [[nodiscard]] bool isOpen() const;
 
-  int read(uint8_t* buffer, size_t count) const;
+  int read(uint8_t* buffer, size_t count, unsigned int timeout_ms) const;
   int write(const uint8_t* buffer, size_t count, unsigned int timeout_ms) const;
 
   class SerialPortError : public std::runtime_error
@@ -41,8 +43,14 @@ public:
   };
 
 private:
+  sp_port* beginIO() const;
+  void endIO() const noexcept;
   static int check(sp_return result);
 
+  mutable std::mutex mutex_;
+  mutable std::condition_variable cv_;
+  mutable size_t active_io_;
+  mutable bool closing_;
   sp_port* port_;
 };
 

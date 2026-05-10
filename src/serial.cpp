@@ -11,38 +11,17 @@ namespace libgnss
 {
 
 SerialPort::SerialPort()
-  : port_(nullptr)
+  : active_io_(0)
+  , closing_(false)
+  , port_(nullptr)
 {
 }
 
 SerialPort::~SerialPort()
 {
-  close();
-}
-
-void SerialPort::open(const std::string& port_name, const int baud_rate)
-{
-  close();
-  check(sp_get_port_by_name(port_name.c_str(), &port_));
-  // configure port
-  check(sp_open(port_, SP_MODE_READ_WRITE));
-  check(sp_set_baudrate(port_, baud_rate));
-  check(sp_set_bits(port_, 8));
-  check(sp_set_parity(port_, SP_PARITY_NONE));
-  check(sp_set_stopbits(port_, 1));
-  check(sp_set_flowcontrol(port_, SP_FLOWCONTROL_NONE));
-}
-
-void SerialPort::close()
-{
   try
   {
-    if (isOpen())
-    {
-      check(sp_close(port_));
-      sp_free_port(port_);
-      port_ = nullptr;
-    }
+    close();
   }
   catch (const SerialPortError& e)
   {
@@ -50,20 +29,130 @@ void SerialPort::close()
   }
 }
 
+void SerialPort::open(const std::string& port_name, const int baud_rate)
+{
+  close();
+  sp_port* new_port = nullptr;
+  check(sp_get_port_by_name(port_name.c_str(), &new_port));
+
+  try
+  {
+  // configure port
+    check(sp_open(new_port, SP_MODE_READ_WRITE));
+    check(sp_set_baudrate(new_port, baud_rate));
+    check(sp_set_bits(new_port, 8));
+    check(sp_set_parity(new_port, SP_PARITY_NONE));
+    check(sp_set_stopbits(new_port, 1));
+    check(sp_set_flowcontrol(new_port, SP_FLOWCONTROL_NONE));
+  }
+  catch (...)
+  {
+    if (new_port != nullptr)
+    {
+      (void) sp_close(new_port);
+      sp_free_port(new_port);
+    }
+    throw;
+  }
+
+  {
+    const std::lock_guard lock(mutex_);
+    port_ = new_port;
+    closing_ = false;
+  }
+}
+
+void SerialPort::close()
+{
+  sp_port* port_to_close = nullptr;
+
+  {
+    std::unique_lock lock(mutex_);
+    if (port_ == nullptr)
+    {
+      closing_ = false;
+      return;
+    }
+
+    closing_ = true;
+    cv_.wait(lock, [this] { return active_io_ == 0; });
+
+    port_to_close = port_;
+    port_ = nullptr;
+  }
+
+  check(sp_close(port_to_close));
+  sp_free_port(port_to_close);
+
+  {
+    const std::lock_guard lock(mutex_);
+    closing_ = false;
+  }
+}
+
 bool SerialPort::isOpen() const
 {
+  const std::lock_guard lock(mutex_);
   return port_ != nullptr;
 }
 
-int SerialPort::read(uint8_t* buffer, const size_t count) const
+int SerialPort::read(uint8_t* buffer, const size_t count, const unsigned int timeout_ms) const
 {
-  return check(sp_blocking_read_next(port_, buffer, count, 0));
+  sp_port* const port = beginIO();
+  try
+  {
+    const int result = check(sp_blocking_read_next(port, buffer, count, timeout_ms));
+    endIO();
+    return result;
+  }
+  catch (...)
+  {
+    endIO();
+    throw;
+  }
 }
 
 int SerialPort::write(
   const uint8_t* buffer, const size_t count, const unsigned int timeout_ms) const
 {
-  return check(sp_blocking_write(port_, buffer, count, timeout_ms));
+  sp_port* const port = beginIO();
+  try
+  {
+    const int result = check(sp_blocking_write(port, buffer, count, timeout_ms));
+    endIO();
+    return result;
+  }
+  catch (...)
+  {
+    endIO();
+    throw;
+  }
+}
+
+sp_port* SerialPort::beginIO() const
+{
+  const std::lock_guard lock(mutex_);
+  if (port_ == nullptr || closing_)
+  {
+    throw SerialPortError("libserialport: port is not open");
+  }
+
+  ++active_io_;
+  return port_;
+}
+
+void SerialPort::endIO() const noexcept
+{
+  const std::lock_guard lock(mutex_);
+  if (active_io_ > 0)
+  {
+    --active_io_;
+  }
+
+  if (closing_ && active_io_ == 0)
+  {
+    cv_.notify_all();
+  }
 }
 
 int SerialPort::check(const sp_return result)
