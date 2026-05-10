@@ -24,7 +24,7 @@ target_include_directories(libgnss
     $<INSTALL_INTERFACE:include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/minmea/include>
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ringbuffer/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ringbuffer/include>
     ${LIBSERIALPORT_INCLUDE_DIR}
 )
 

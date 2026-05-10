@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <string>
 #include <libserialport.h>
+#include <stdexcept>
 
 namespace libgnss
 {
@@ -22,16 +23,25 @@ public:
   SerialPort(const SerialPort&) = delete;
   SerialPort& operator=(const SerialPort&) = delete;
 
-  bool open(const std::string& device, int baud_rate);
+  void open(const std::string& port_name, int baud_rate);
   void close();
 
   [[nodiscard]] bool isOpen() const;
 
-  int read(uint8_t* buffer, size_t size);
-  int write(const uint8_t* buffer, size_t size);
+  int read(uint8_t* buffer, size_t count) const;
+  int write(const uint8_t* buffer, size_t count, unsigned int timeout_ms) const;
+
+  class SerialPortError : public std::runtime_error
+  {
+  public:
+    explicit SerialPortError(const std::string& msg)
+      : runtime_error(msg)
+    {
+    }
+  };
 
 private:
-  bool _open(const std::string& device, int baud_rate);
+  static int check(sp_return result);
 
   sp_port* port_;
 };
