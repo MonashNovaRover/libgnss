@@ -617,7 +617,7 @@ bool minmea_parse_vtg(struct minmea_sentence_vtg *frame, const char *sentence)
             &c_knots,
             &frame->speed_kph,
             &c_kph,
-            &c_faa_mode))
+            &frame->mode))
         return false;
     if (memcmp(frame->type.sentence_id, "VTG", sizeof(frame->type.sentence_id)))
         return false;
@@ -630,7 +630,6 @@ bool minmea_parse_vtg(struct minmea_sentence_vtg *frame, const char *sentence)
         frame->speed_knots.scale = 0;
     if (c_kph != 'K')
         frame->speed_kph.scale = 0;
-    frame->faa_mode = (enum minmea_faa_mode)c_faa_mode;
 
     return true;
 }

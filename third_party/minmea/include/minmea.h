@@ -100,17 +100,6 @@ enum minmea_gll_status {
     MINMEA_GLL_STATUS_DATA_NOT_VALID = 'V',
 };
 
-// FAA mode added to some fields in NMEA 2.3.
-enum minmea_faa_mode {
-    MINMEA_FAA_MODE_AUTONOMOUS = 'A',
-    MINMEA_FAA_MODE_DIFFERENTIAL = 'D',
-    MINMEA_FAA_MODE_ESTIMATED = 'E',
-    MINMEA_FAA_MODE_MANUAL = 'M',
-    MINMEA_FAA_MODE_SIMULATED = 'S',
-    MINMEA_FAA_MODE_NOT_VALID = 'N',
-    MINMEA_FAA_MODE_PRECISE = 'P',
-};
-
 struct minmea_sentence_gll {
     union minmea_type type;
     struct minmea_float latitude;
@@ -192,7 +181,7 @@ struct minmea_sentence_vtg {
     struct minmea_float magnetic_track_degrees;
     struct minmea_float speed_knots;
     struct minmea_float speed_kph;
-    enum minmea_faa_mode faa_mode;
+    char mode;
 };
 
 struct minmea_sentence_zda {
