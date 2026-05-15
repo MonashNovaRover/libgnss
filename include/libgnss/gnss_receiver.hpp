@@ -9,7 +9,7 @@
 #include <functional>
 #include <string>
 
-#include "nmea_reader.hpp"
+#include "libgnss/nmea_reader.hpp"
 
 namespace libgnss
 {

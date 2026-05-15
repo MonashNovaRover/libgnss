@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <cstddef>
 
-#include "rtcm.hpp"
+#include "libgnss/rtcm.hpp"
 
 namespace
 {
