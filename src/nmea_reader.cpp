@@ -133,7 +133,7 @@ struct NMEAReader::SentenceVisitor
       gst.latitude_error_deviation * gst.latitude_error_deviation;    // North
     reader_.latest_fix_.position_covariance[8] =
       gst.altitude_error_deviation * gst.altitude_error_deviation;    // Up
-    reader_.latest_fix_.covariance_type = Fix::CovarianceType::KNOWN;
+    reader_.latest_fix_.covariance_type = Fix::CovarianceType::DIAGONAL_KNOWN;
     getTimestamp(gst.time);
   }
 
@@ -205,8 +205,8 @@ private:
   void approximateCovariance(const float hdop, const float vdop = 0) const
   {
     if (
-      reader_.latest_fix_.covariance_type == Fix::CovarianceType::UNKNOWN ||
-      reader_.latest_fix_.covariance_type == Fix::CovarianceType::APPROXIMATED)
+      reader_.latest_fix_.covariance_type == Fix::CovarianceType::DIAGONAL_KNOWN ||
+      reader_.latest_fix_.covariance_type == Fix::CovarianceType::KNOWN)
     {
       return;
     }
@@ -277,7 +277,7 @@ private:
   NMEAReader& reader_;
 };
 
-std::optional<Sentence> NMEAReader::parseNMEA(const char* sentence) const
+std::optional<Sentence> NMEAReader::parseNMEA(const char* sentence)
 {
   const size_t id = minmea_sentence_id(sentence, false);
 
@@ -289,7 +289,27 @@ std::optional<Sentence> NMEAReader::parseNMEA(const char* sentence) const
   std::optional<Sentence> s = dispatch_table[id](sentence);
   if (s.has_value())
   {
-    std::visit(*visitor_, s.value());
+    {
+      std::scoped_lock lock(mutex_);
+      std::visit(*visitor_, s.value());
+    }
+    // custom callbacks fired outside the lock to avoid deadlock
+    std::visit(
+      [this](const auto& parsed_sentence)
+      {
+        using SentenceType = std::decay_t<decltype(parsed_sentence)>;
+        utils::Callback<SentenceType> cb;
+        {
+          // snapshot callback under lock
+          std::scoped_lock lock(mutex_);
+          cb = std::get<utils::Callback<SentenceType>>(custom_callbacks_);
+        }
+        if (cb)
+        {
+          cb(parsed_sentence);
+        }
+      },
+      s.value());
   }
 
   return s;
@@ -297,22 +317,22 @@ std::optional<Sentence> NMEAReader::parseNMEA(const char* sentence) const
 
 Fix NMEAReader::getLatestFix() const
 {
+  std::scoped_lock lock(mutex_);
   return latest_fix_;
-}
-
-template <typename T>
-void NMEAReader::setCustomCallback(utils::Callback<T> callback)
-{
-  std::get<utils::Callback<T>>(custom_callbacks_).emplace(std::move(callback));
 }
 
 void NMEAReader::reset()
 {
+  std::scoped_lock lock(mutex_);
   latest_fix_ = Fix{};
   latest_date_.reset();
   known_vdop_ = false;
-  std::apply([](auto&... opt) { (opt.reset(), ...); }, sentences);
-  std::apply([](auto&... cb) { ((cb = nullptr), ...); }, custom_callbacks_);
+  std::apply(
+    [](auto&... opt)
+    {
+      (opt.reset(), ...);
+    },
+    sentences);
 }
 
 }  // namespace libgnss::nmea
