@@ -90,13 +90,23 @@ constexpr FixStatus statusFromFAA(const Mode mode)
 
 struct Fix
 {
+  enum class CovarianceType : uint8_t
+  {
+    UNKNOWN,
+    APPROXIMATED,
+    DIAGONAL_KNOWN,
+    KNOWN,
+  };
+
+  std::chrono::system_clock::time_point timestamp;
+  FixStatus status = FixStatus::NO_FIX;
   double latitude = std::numeric_limits<double>::quiet_NaN();
   double longitude = std::numeric_limits<double>::quiet_NaN();
   double altitude = std::numeric_limits<double>::quiet_NaN();
   double speed = std::numeric_limits<double>::quiet_NaN();
   double heading = std::numeric_limits<double>::quiet_NaN();
-  FixStatus status = FixStatus::NO_FIX;
-  std::chrono::system_clock::time_point timestamp;
+  std::array<double, 9> position_covariance{};  // East, North and Up (ENU) in row-major order
+  CovarianceType covariance_type = CovarianceType::UNKNOWN;
 };
 
 struct Date
@@ -239,7 +249,7 @@ struct SentenceGSA
   ID id;
   GSAMode mode;
   GSAFixType fix_type;
-  std::array<int, 12> sats;
+  std::array<int, 12> sats{};
   float pdop;
   float hdop;
   float vdop;
@@ -306,7 +316,7 @@ struct SentenceGSV
   int total_msgs;
   int msg_nr;
   int total_sats;
-  std::array<SatelliteInfo, 4> sats;
+  std::array<SatelliteInfo, 4> sats{};
 
   explicit SentenceGSV(const minmea_sentence_gsv& sentence)
     : id(sentence.type)
@@ -400,6 +410,10 @@ struct SentenceZDA
   {
   }
 };
+
+using Sentence = std::variant<
+  SentenceGBS, SentenceGGA, SentenceGLL, SentenceGSA, SentenceGST, SentenceGSV, SentenceRMC,
+  SentenceTHS, SentenceVTG, SentenceZDA>;
 
 }  // namespace libgnss::nmea
 

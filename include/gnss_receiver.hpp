@@ -9,7 +9,7 @@
 #include <functional>
 #include <string>
 
-#include "nmea.hpp"
+#include "nmea_reader.hpp"
 
 namespace libgnss
 {
@@ -23,7 +23,6 @@ public:
   void start();
   void stop();
   void configurePort(const std::string& port_name, int baud_rate);
-  Fix latestFix();
 
   // disable copying
   GNSSReceiver(const GNSSReceiver&) = delete;
