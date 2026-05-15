@@ -74,7 +74,7 @@ unsigned crc24q_hash(const uint8_t* data, const uint16_t len)
 {
   unsigned crc = 0;
 
-  for (int i = 0; i < len; i++)
+  for (size_t i = 0; i < len; i++)
   {
     crc = (crc << 8) ^ crc24q[data[i] ^ static_cast<uint8_t>(crc >> 16)];
   }
