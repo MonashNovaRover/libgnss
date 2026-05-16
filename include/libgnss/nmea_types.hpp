@@ -25,7 +25,7 @@
 #include <chrono>
 #include <array>
 
-#include "minmea.h"
+#include "minmea/minmea.h"
 
 namespace libgnss::nmea
 {

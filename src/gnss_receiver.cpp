@@ -2,7 +2,7 @@
 // Created by Terry on 5/7/2026.
 //
 
-#include "../include/libgnss/gnss_receiver.hpp"
+#include "libgnss/gnss_receiver.hpp"
 
 namespace libgnss {
 } // libgnss

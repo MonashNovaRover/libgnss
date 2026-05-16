@@ -26,7 +26,7 @@
 #include <functional>
 #include <mutex>
 
-#include "nmea_types.hpp"
+#include "libgnss/nmea_types.hpp"
 #include "variant_helper.hpp"
 
 namespace libgnss::nmea

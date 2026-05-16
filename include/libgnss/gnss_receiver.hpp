@@ -9,6 +9,7 @@
 #include <functional>
 #include <string>
 
+#include "libgnss/serial.hpp"
 #include "libgnss/nmea_reader.hpp"
 
 namespace libgnss
@@ -22,15 +23,19 @@ public:
 
   void start();
   void stop();
+  void write(const std::string& data);
   void configurePort(const std::string& port_name, int baud_rate);
+
+  template <typename T>
+  void setSentenceCallback(utils::Callback<T> callback);
 
   // disable copying
   GNSSReceiver(const GNSSReceiver&) = delete;
   GNSSReceiver& operator=(const GNSSReceiver&) = delete;
 
 private:
-  std::array<std::function<void(nmea::Sentence)>, std::variant_size_v<nmea::Sentence>>
-    sentence_type_callback_map;
+  SerialPort serial_port_;
+  nmea::NMEAReader nmea_reader_;
 
   std::string port_name_;
   int baud_rate_;

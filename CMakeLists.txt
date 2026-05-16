@@ -9,11 +9,11 @@ find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h REQUIRED)
 find_library(LIBSERIALPORT_LIBRARY NAMES serialport libserialport REQUIRED)
 
 add_library(libgnss
-  third_party/minmea/src/minmea.c
+  src/gnss_receiver.cpp
   src/nmea_reader.cpp
   src/rtcm.cpp
-  src/gnss_receiver.cpp
   src/serial.cpp
+  third_party/src/minmea/minmea.c
 )
 
 target_compile_features(libgnss PUBLIC cxx_std_17)
@@ -24,8 +24,7 @@ target_include_directories(libgnss
     $<INSTALL_INTERFACE:include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/minmea/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ringbuffer/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
     ${LIBSERIALPORT_INCLUDE_DIR}
 )
 

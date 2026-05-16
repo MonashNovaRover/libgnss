@@ -15,7 +15,7 @@
 #include <optional>
 #include <string>
 
-#include "minmea.h"
+#include "minmea/minmea.h"
 #include "libgnss/nmea_reader.hpp"
 
 #include <cmath>
