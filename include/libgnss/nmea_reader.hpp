@@ -55,7 +55,7 @@ public:
    * Returns the latest fix information, which is updated automatically with parsed NMEA sentences.
    * @return latest fix information
    */
-  [[nodiscard]] Fix getLatestFix() const;
+  [[nodiscard]] Fix latestFix() const;
 
   /**
    * Returns the latest parsed sentence of a specific type, if available.
@@ -64,7 +64,7 @@ public:
    * such sentence has been parsed yet
    */
   template <typename TSentence>
-  std::optional<TSentence> getLatestSentence() const
+  std::optional<TSentence> latestSentence() const
   {
     std::scoped_lock lock(mutex_);
     return std::get<std::optional<TSentence>>(sentences);
@@ -96,6 +96,17 @@ public:
     {
       std::get<utils::Callback<TSentence>>(custom_callbacks_) = std::move(callback);
     }
+  }
+
+  /**
+   * Unregisters the custom callback for a specific NMEA sentence type.
+   * @tparam TSentence NMEA sentence struct type, e.g. SentenceGGA
+   */
+  template <typename TSentence>
+  void unsetCustomCallback()
+  {
+    std::scoped_lock lock(mutex_);
+    std::get<utils::Callback<TSentence>>(custom_callbacks_) = nullptr;
   }
 
   /**
